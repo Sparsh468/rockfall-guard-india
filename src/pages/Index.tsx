@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Dashboard from "@/components/Dashboard";
+import RiskMap from "@/components/RiskMap";
 import UploadInterface from "@/components/UploadInterface";
 import PredictionInterface from "@/components/PredictionInterface";
 import AlertInterface from "@/components/AlertInterface";
@@ -147,6 +148,8 @@ const Index = () => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard onNavigate={setActiveTab} />;
+      case 'map':
+        return <RiskMap />;
       case 'upload':
         return <UploadInterface />;
       case 'prediction':

@@ -8,46 +8,46 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 220 13% 9%;
+    --foreground: 220 9% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 220 13% 12%;
+    --card-foreground: 220 9% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 220 13% 12%;
+    --popover-foreground: 220 9% 95%;
 
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 25 95% 53%;
+    --primary-foreground: 220 13% 9%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 220 9% 95%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 13% 18%;
+    --muted-foreground: 220 9% 65%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 25 95% 53%;
+    --accent-foreground: 220 13% 9%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 9% 95%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 25 95% 53%;
 
     /* Risk zone colors */
     --danger: 0 84% 60%;
-    --danger-foreground: 210 40% 98%;
+    --danger-foreground: 220 9% 95%;
     --warning: 45 93% 58%;
-    --warning-foreground: 222.2 84% 4.9%;
+    --warning-foreground: 220 13% 9%;
     --safe: 142 76% 36%;
-    --safe-foreground: 210 40% 98%;
+    --safe-foreground: 220 9% 95%;
 
     /* Monitoring colors */
-    --monitoring-bg: 210 40% 94%;
-    --chart-grid: 214.3 31.8% 85%;
-    --chart-text: 222.2 47.4% 11.2%;
+    --monitoring-bg: 220 13% 6%;
+    --chart-grid: 220 13% 25%;
+    --chart-text: 220 9% 80%;
 
     /* Gradients */
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(15 84% 50%));

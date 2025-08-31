@@ -32,11 +32,11 @@ const riskDistribution = [
 ];
 
 const mineLocations = [
-  { id: 1, name: 'Jharia Coalfield', state: 'Jharkhand', risk: 'high', x: 52, y: 35, incidents: 12 },
-  { id: 2, name: 'Talcher Coalfield', state: 'Odisha', risk: 'medium', x: 58, y: 42, incidents: 6 },
-  { id: 3, name: 'Korba Coalfield', state: 'Chhattisgarh', risk: 'high', x: 48, y: 45, incidents: 8 },
-  { id: 4, name: 'Raniganj Coalfield', state: 'West Bengal', risk: 'low', x: 62, y: 38, incidents: 2 },
-  { id: 5, name: 'Singrauli Coalfield', state: 'Madhya Pradesh', risk: 'medium', x: 45, y: 40, incidents: 4 },
+  { id: 1, name: 'Jharia Coalfield', state: 'Jharkhand', risk: 'high', x: 68, y: 45, incidents: 12 },
+  { id: 2, name: 'Talcher Coalfield', state: 'Odisha', risk: 'medium', x: 72, y: 52, incidents: 6 },
+  { id: 3, name: 'Korba Coalfield', state: 'Chhattisgarh', risk: 'high', x: 65, y: 55, incidents: 8 },
+  { id: 4, name: 'Raniganj Coalfield', state: 'West Bengal', risk: 'low', x: 75, y: 48, incidents: 2 },
+  { id: 5, name: 'Singrauli Coalfield', state: 'Madhya Pradesh', risk: 'medium', x: 62, y: 50, incidents: 4 },
 ];
 
 const Dashboard = ({ onNavigate }: DashboardProps) => {
