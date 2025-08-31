@@ -16,7 +16,6 @@ interface NavigationProps {
 const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'map', label: 'Risk Map', icon: Map },
     { id: 'upload', label: 'Upload', icon: Upload },
     { id: 'prediction', label: 'Prediction', icon: TrendingUp },
     { id: 'alerts', label: 'Alerts', icon: AlertTriangle },

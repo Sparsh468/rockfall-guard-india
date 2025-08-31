@@ -296,44 +296,6 @@ const AlertInterface = () => {
         </div>
       </Card>
 
-      {/* Alert Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 bg-danger/5 border-danger/20">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-danger/20 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-danger" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Alerts</p>
-              <p className="text-xl font-bold text-danger">3</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-warning/5 border-warning/20">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-warning/20 rounded-lg">
-              <Clock className="w-5 h-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pending Response</p>
-              <p className="text-xl font-bold text-warning">7</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-safe/5 border-safe/20">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-safe/20 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-safe" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Resolved Today</p>
-              <p className="text-xl font-bold text-safe">12</p>
-            </div>
-          </div>
-        </Card>
-      </div>
     </div>
   );
 };
