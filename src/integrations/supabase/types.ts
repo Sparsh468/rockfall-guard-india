@@ -14,7 +14,213 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          alert_level: string
+          created_at: string
+          id: string
+          is_resolved: boolean | null
+          message: string
+          mine_id: string
+          resolved_at: string | null
+          risk_probability: number
+        }
+        Insert: {
+          alert_level: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          message: string
+          mine_id: string
+          resolved_at?: string | null
+          risk_probability: number
+        }
+        Update: {
+          alert_level?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          message?: string
+          mine_id?: string
+          resolved_at?: string | null
+          risk_probability?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_mine_id_fkey"
+            columns: ["mine_id"]
+            isOneToOne: false
+            referencedRelation: "mines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mines: {
+        Row: {
+          created_at: string
+          current_risk_level: string | null
+          current_risk_probability: number | null
+          id: string
+          last_updated: string | null
+          latitude: number
+          location: string
+          longitude: number
+          mine_type: string
+          name: string
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          current_risk_level?: string | null
+          current_risk_probability?: number | null
+          id?: string
+          last_updated?: string | null
+          latitude: number
+          location: string
+          longitude: number
+          mine_type: string
+          name: string
+          state: string
+        }
+        Update: {
+          created_at?: string
+          current_risk_level?: string | null
+          current_risk_probability?: number | null
+          id?: string
+          last_updated?: string | null
+          latitude?: number
+          location?: string
+          longitude?: number
+          mine_type?: string
+          name?: string
+          state?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sensor_data: {
+        Row: {
+          crack_score: number | null
+          created_at: string
+          dem_slope: number | null
+          displacement: number | null
+          id: string
+          mine_id: string
+          pore_pressure: number | null
+          rainfall: number | null
+          strain: number | null
+          temperature: number | null
+          timestamp: string
+        }
+        Insert: {
+          crack_score?: number | null
+          created_at?: string
+          dem_slope?: number | null
+          displacement?: number | null
+          id?: string
+          mine_id: string
+          pore_pressure?: number | null
+          rainfall?: number | null
+          strain?: number | null
+          temperature?: number | null
+          timestamp?: string
+        }
+        Update: {
+          crack_score?: number | null
+          created_at?: string
+          dem_slope?: number | null
+          displacement?: number | null
+          id?: string
+          mine_id?: string
+          pore_pressure?: number | null
+          rainfall?: number | null
+          strain?: number | null
+          temperature?: number | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensor_data_mine_id_fkey"
+            columns: ["mine_id"]
+            isOneToOne: false
+            referencedRelation: "mines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uploads: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          location: string
+          mine_id: string | null
+          timestamp: string
+          uploader: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type: string
+          file_url: string
+          id?: string
+          location: string
+          mine_id?: string | null
+          timestamp?: string
+          uploader: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          location?: string
+          mine_id?: string | null
+          timestamp?: string
+          uploader?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uploads_mine_id_fkey"
+            columns: ["mine_id"]
+            isOneToOne: false
+            referencedRelation: "mines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
