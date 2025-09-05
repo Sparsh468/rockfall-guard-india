@@ -1,13 +1,31 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import Auth from "@/components/Auth";
+import EnhancedDashboard from "@/components/EnhancedDashboard";
+import EnhancedUploadInterface from "@/components/EnhancedUploadInterface";
+import EnhancedPredictionInterface from "@/components/EnhancedPredictionInterface";
 import Navigation from "@/components/Navigation";
-import Dashboard from "@/components/Dashboard";
 import RiskMap from "@/components/RiskMap";
-import UploadInterface from "@/components/UploadInterface";
-import PredictionInterface from "@/components/PredictionInterface";
 import AlertInterface from "@/components/AlertInterface";
 
 const Index = () => {
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-monitoring-bg flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
 
   // Enhanced live rockfall background animation
   useEffect(() => {
@@ -147,17 +165,17 @@ const Index = () => {
   const renderActiveComponent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard onNavigate={setActiveTab} />;
+        return <EnhancedDashboard />;
       case 'map':
         return <RiskMap />;
       case 'upload':
-        return <UploadInterface />;
+        return <EnhancedUploadInterface />;
       case 'prediction':
-        return <PredictionInterface />;
+        return <EnhancedPredictionInterface />;
       case 'alerts':
         return <AlertInterface />;
       default:
-        return <Dashboard onNavigate={setActiveTab} />;
+        return <EnhancedDashboard />;
     }
   };
 
