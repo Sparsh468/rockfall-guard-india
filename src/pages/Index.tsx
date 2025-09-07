@@ -12,23 +12,11 @@ const Index = () => {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-monitoring-bg flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Auth />;
-  }
-
-  // Enhanced live rockfall background animation
+  // Enhanced live rockfall background animation - MOVED TO TOP
   useEffect(() => {
+    // Only run animation if user is authenticated
+    if (!user || loading) return;
+    
     const canvas = document.getElementById('rockfall-canvas') as HTMLCanvasElement;
     if (!canvas) return;
 
@@ -160,7 +148,22 @@ const Index = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, []);
+  }, [user, loading]); // Added dependencies
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-monitoring-bg flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
 
   const renderActiveComponent = () => {
     switch (activeTab) {
