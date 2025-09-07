@@ -38,6 +38,12 @@ const Auth = () => {
             variant: "destructive",
           });
           setIsSignUp(false);
+        } else if (error.message.includes('Email not confirmed')) {
+          toast({
+            title: "Email Verification Required",
+            description: "Please check your email and click the verification link to complete registration.",
+            variant: "destructive",
+          });
         } else {
           toast({
             title: isSignUp ? "Sign Up Failed" : "Sign In Failed",
@@ -46,12 +52,17 @@ const Auth = () => {
           });
         }
       } else {
-        toast({
-          title: isSignUp ? "Account Created!" : "Welcome Back!",
-          description: isSignUp 
-            ? "Your account has been created successfully." 
-            : "You have been signed in successfully.",
-        });
+        if (isSignUp) {
+          toast({
+            title: "Account Created!",
+            description: "Please check your email and click the verification link to complete registration.",
+          });
+        } else {
+          toast({
+            title: "Welcome Back!",
+            description: "You have been signed in successfully.",
+          });
+        }
       }
     } catch (error) {
       toast({

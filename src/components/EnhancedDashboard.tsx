@@ -8,10 +8,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { 
   Upload, TrendingUp, AlertTriangle, Users, Activity, MapPin, Clock, 
-  RefreshCw, LogOut, Image as ImageIcon, Zap 
+  RefreshCw, LogOut, Image as ImageIcon, Zap, BarChart3, Target
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import indiaMapImage from "@/assets/india-map.jpg";
+import EmergencyAlertBanner from "./EmergencyAlertBanner";
+import InteractiveCharts from "./InteractiveCharts";
+import PredictionResultsPanel from "./PredictionResultsPanel";
 
 interface Mine {
   id: string;
@@ -50,6 +53,8 @@ const EnhancedDashboard = () => {
   const [highRiskAlerts, setHighRiskAlerts] = useState<Mine[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showEmergencyAlert, setShowEmergencyAlert] = useState(false);
+  const [activeSection, setActiveSection] = useState<'overview' | 'charts' | 'predictions'>('overview');
 
   const fetchData = async () => {
     try {
@@ -85,6 +90,9 @@ const EnhancedDashboard = () => {
       // Filter high risk mines
       const highRisk = (minesData || []).filter(mine => mine.current_risk_probability > 0.7);
       setHighRiskAlerts(highRisk);
+      
+      // Show emergency alert if high risk detected
+      setShowEmergencyAlert(highRisk.length > 0);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -143,6 +151,21 @@ const EnhancedDashboard = () => {
 
   return (
     <div className="min-h-screen bg-monitoring-bg text-foreground">
+      {/* Emergency Alert Banner */}
+      {showEmergencyAlert && highRiskAlerts.length > 0 && (
+        <EmergencyAlertBanner
+          isVisible={showEmergencyAlert}
+          onDismiss={() => setShowEmergencyAlert(false)}
+          alertData={{
+            mineName: highRiskAlerts[0].name,
+            riskProbability: highRiskAlerts[0].current_risk_probability,
+            location: highRiskAlerts[0].location,
+            timestamp: new Date().toLocaleTimeString(),
+            affectedPersonnel: 45
+          }}
+        />
+      )}
+
       {/* Header */}
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4">
@@ -153,7 +176,7 @@ const EnhancedDashboard = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold">RockFall Guard India</h1>
-                <p className="text-sm text-muted-foreground">Mining Safety Dashboard</p>
+                <p className="text-sm text-muted-foreground">Production-Ready Mining Safety Platform</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -165,7 +188,7 @@ const EnhancedDashboard = () => {
                 className="flex items-center space-x-2"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
+                <span>Refresh Risk Data</span>
               </Button>
               <div className="text-sm text-muted-foreground">
                 Welcome, {user?.email}
@@ -181,24 +204,50 @@ const EnhancedDashboard = () => {
               </Button>
             </div>
           </div>
+          
+          {/* Section Navigation */}
+          <div className="flex items-center space-x-1 mt-4">
+            {[
+              { id: 'overview', label: 'Overview', icon: Activity },
+              { id: 'charts', label: 'Analytics', icon: BarChart3 },
+              { id: 'predictions', label: 'AI Predictions', icon: Target },
+            ].map((section) => {
+              const Icon = section.icon;
+              return (
+                <Button
+                  key={section.id}
+                  variant={activeSection === section.id ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveSection(section.id as any)}
+                  className="flex items-center space-x-2"
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{section.label}</span>
+                </Button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8 space-y-8">
-        {/* High Risk Alerts */}
-        {highRiskAlerts.length > 0 && (
-          <Alert className="border-danger/50 bg-danger/10">
-            <AlertTriangle className="h-4 w-4 text-danger" />
-            <AlertDescription className="text-danger">
-              <strong>High Rockfall Risk Detected!</strong> {highRiskAlerts.length} mine{highRiskAlerts.length > 1 ? 's' : ''} require immediate attention:
-              {highRiskAlerts.map(mine => (
-                <span key={mine.id} className="block mt-1">
-                  • {mine.name} - Risk: {Math.round(mine.current_risk_probability * 100)}% - Take Precautionary Measures
-                </span>
-              ))}
-            </AlertDescription>
-          </Alert>
-        )}
+      <div className="container mx-auto px-6 py-8">
+        {/* Render content based on active section */}
+        {activeSection === 'overview' && (
+          <div className="space-y-8">
+            {/* High Risk Alerts */}
+            {highRiskAlerts.length > 0 && !showEmergencyAlert && (
+              <Alert className="border-danger/50 bg-danger/10">
+                <AlertTriangle className="h-4 w-4 text-danger" />
+                <AlertDescription className="text-danger">
+                  <strong>High Rockfall Risk Detected!</strong> {highRiskAlerts.length} mine{highRiskAlerts.length > 1 ? 's' : ''} require immediate attention:
+                  {highRiskAlerts.map(mine => (
+                    <span key={mine.id} className="block mt-1">
+                      • {mine.name} - Risk: {Math.round(mine.current_risk_probability * 100)}% - Take Precautionary Measures
+                    </span>
+                  ))}
+                </AlertDescription>
+              </Alert>
+            )}
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Interactive India Map */}
@@ -438,6 +487,22 @@ const EnhancedDashboard = () => {
             </Card>
           </div>
         </div>
+      </div>
+    )}
+
+    {/* Analytics Section */}
+    {activeSection === 'charts' && (
+      <div className="space-y-8">
+        <InteractiveCharts />
+      </div>
+    )}
+
+    {/* AI Predictions Section */}
+    {activeSection === 'predictions' && (
+      <div className="space-y-8">
+        <PredictionResultsPanel />
+      </div>
+    )}
       </div>
     </div>
   );
