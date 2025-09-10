@@ -116,7 +116,7 @@ const EnhancedUploadInterface = () => {
           .from('rockfall-data')
           .getPublicUrl(filePath);
 
-        // Store metadata in database
+        // Store metadata in database with GPS coordinates if available
         const { error: dbError } = await supabase
           .from('uploads')
           .insert({
@@ -126,6 +126,7 @@ const EnhancedUploadInterface = () => {
             file_size: file.size,
             location: selectedState,
             uploader: user.id,
+            mine_id: null, // Could be linked to a specific mine if available
           });
 
         if (dbError) {

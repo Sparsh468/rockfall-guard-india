@@ -16,6 +16,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import EmergencyAlertModal from './EmergencyAlertModal';
 import InteractiveCharts from "./InteractiveCharts";
 import PredictionResultsPanel from "./PredictionResultsPanel";
+import RecentUploadsPanel from "./RecentUploadsPanel";
+import RiskEngine from "./RiskEngine";
+import { useSensorData } from "@/hooks/useSensorData";
 
 interface Mine {
   id: string;
@@ -69,6 +72,12 @@ const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
     affectedPersonnel: number;
   } | null>(null);
 
+  // Real-time sensor monitoring for risk assessment
+  const { riskScore: currentRiskScore, currentReading } = useSensorData({ 
+    mode: 'simulated', 
+    mineId: mines[0]?.id 
+  });
+
   const fetchData = async () => {
     try {
       // Fetch mines data
@@ -100,11 +109,20 @@ const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
       if (imagesError) throw imagesError;
       setUploadedImages(imagesData || []);
 
-      // Filter high risk mines
-      const highRisk = (minesData || []).filter(mine => mine.current_risk_probability > 0.7);
+      // Filter high risk mines and combine with real-time sensor risk
+      const highRisk = (minesData || []).filter(mine => 
+        mine.current_risk_probability > 0.7 || (currentRiskScore && currentRiskScore > 0.7)
+      );
       setHighRiskAlerts(highRisk);
       
-      // Don't auto-show emergency alert on dashboard load - only show manually or via new alerts
+      // Trigger alert if risk score is critical
+      if (currentRiskScore > 0.8) {
+        toast({
+          title: "Critical Risk Detected!",
+          description: `Risk probability: ${Math.round(currentRiskScore * 100)}% - Immediate action required`,
+          variant: "destructive",
+        });
+      }
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -563,16 +581,30 @@ const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
     {/* Analytics Section */}
     {activeSection === 'charts' && (
       <div className="space-y-8">
-        <InteractiveCharts />
+        <InteractiveCharts mineId={mines[0]?.id} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RecentUploadsPanel />
+        </div>
       </div>
     )}
 
     {/* AI Predictions Section */}
-    {activeSection === 'predictions' && (
-      <div className="space-y-8">
-        <PredictionResultsPanel />
-      </div>
-    )}
+        {activeSection === 'predictions' && (
+          <div className="space-y-8">
+            <PredictionResultsPanel />
+            <RiskEngine mineId={mines[0]?.id} onAlertTriggered={(level, message) => {
+              if (level === 'high') {
+                setAlertModalData({
+                  mineName: mines[0]?.name || 'Unknown Mine',
+                  riskProbability: currentRiskScore,
+                  location: mines[0]?.location || 'Unknown Location',
+                  timestamp: new Date().toLocaleString(),
+                  affectedPersonnel: Math.floor(Math.random() * 25) + 5
+                });
+              }
+            }} />
+          </div>
+        )}
       </div>
     </div>
   );
