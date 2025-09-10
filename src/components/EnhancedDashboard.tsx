@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import indiaMapImage from "@/assets/india-map.jpg";
-import EmergencyAlertBanner from "./EmergencyAlertBanner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import EmergencyAlertModal from './EmergencyAlertModal';
 import InteractiveCharts from "./InteractiveCharts";
 import PredictionResultsPanel from "./PredictionResultsPanel";
 
@@ -45,7 +46,11 @@ interface UploadedImage {
   timestamp: string;
 }
 
-const EnhancedDashboard = () => {
+interface EnhancedDashboardProps {
+  onTabChange?: (tab: string) => void;
+}
+
+const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
   const { user, signOut } = useAuth();
   const [mines, setMines] = useState<Mine[]>([]);
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
@@ -55,6 +60,14 @@ const EnhancedDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showEmergencyAlert, setShowEmergencyAlert] = useState(false);
   const [activeSection, setActiveSection] = useState<'overview' | 'charts' | 'predictions'>('overview');
+  const [mapError, setMapError] = useState(false);
+  const [alertModalData, setAlertModalData] = useState<{
+    mineName: string;
+    riskProbability: number;
+    location: string;
+    timestamp: string;
+    affectedPersonnel: number;
+  } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -91,8 +104,7 @@ const EnhancedDashboard = () => {
       const highRisk = (minesData || []).filter(mine => mine.current_risk_probability > 0.7);
       setHighRiskAlerts(highRisk);
       
-      // Show emergency alert if high risk detected
-      setShowEmergencyAlert(highRisk.length > 0);
+      // Don't auto-show emergency alert on dashboard load - only show manually or via new alerts
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -151,20 +163,12 @@ const EnhancedDashboard = () => {
 
   return (
     <div className="min-h-screen bg-monitoring-bg text-foreground">
-      {/* Emergency Alert Banner */}
-      {showEmergencyAlert && highRiskAlerts.length > 0 && (
-        <EmergencyAlertBanner
-          isVisible={showEmergencyAlert}
-          onDismiss={() => setShowEmergencyAlert(false)}
-          alertData={{
-            mineName: highRiskAlerts[0].name,
-            riskProbability: highRiskAlerts[0].current_risk_probability,
-            location: highRiskAlerts[0].location,
-            timestamp: new Date().toLocaleTimeString(),
-            affectedPersonnel: 45
-          }}
-        />
-      )}
+      {/* Emergency Alert Modal */}
+      <EmergencyAlertModal
+        isOpen={!!alertModalData}
+        onClose={() => setAlertModalData(null)}
+        alertData={alertModalData}
+      />
 
       {/* Header */}
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
@@ -234,12 +238,24 @@ const EnhancedDashboard = () => {
         {/* Render content based on active section */}
         {activeSection === 'overview' && (
           <div className="space-y-8">
-            {/* High Risk Alerts */}
-            {highRiskAlerts.length > 0 && !showEmergencyAlert && (
-              <Alert className="border-danger/50 bg-danger/10">
+            {/* High Risk Alerts with Emergency Modal Trigger */}
+            {highRiskAlerts.length > 0 && (
+              <Alert className="border-danger/50 bg-danger/10 cursor-pointer hover:bg-danger/20 transition-colors"
+                onClick={() => {
+                  if (highRiskAlerts[0]) {
+                    setAlertModalData({
+                      mineName: highRiskAlerts[0].name,
+                      riskProbability: highRiskAlerts[0].current_risk_probability,
+                      location: highRiskAlerts[0].location,
+                      timestamp: new Date(highRiskAlerts[0].last_updated).toLocaleString(),
+                      affectedPersonnel: Math.floor(Math.random() * 25) + 5
+                    });
+                  }
+                }}
+              >
                 <AlertTriangle className="h-4 w-4 text-danger" />
                 <AlertDescription className="text-danger">
-                  <strong>High Rockfall Risk Detected!</strong> {highRiskAlerts.length} mine{highRiskAlerts.length > 1 ? 's' : ''} require immediate attention:
+                  <strong>High Rockfall Risk Detected!</strong> {highRiskAlerts.length} mine{highRiskAlerts.length > 1 ? 's' : ''} require immediate attention. Click to view emergency actions.
                   {highRiskAlerts.map(mine => (
                     <span key={mine.id} className="block mt-1">
                       • {mine.name} - Risk: {Math.round(mine.current_risk_probability * 100)}% - Take Precautionary Measures
@@ -259,6 +275,30 @@ const EnhancedDashboard = () => {
                 <span className="text-sm text-muted-foreground">Live Updates</span>
               </div>
             </div>
+            
+            {mapError ? (
+              <div className="relative w-full h-[400px] bg-secondary/30 rounded-lg flex flex-col items-center justify-center space-y-4 border border-border">
+                <AlertTriangle className="w-12 h-12 text-warning" />
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-medium">Map Failed to Load</p>
+                  <p className="text-sm text-muted-foreground">Unable to display the India mining risk map</p>
+                </div>
+                <Button 
+                  onClick={() => {
+                    setMapError(false);
+                    toast({
+                      title: "Retrying Map Load",
+                      description: "Attempting to reload the mining risk map",
+                    });
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Retry Map Load
+                </Button>
+              </div>
+            ) : (
             <div className="relative w-full h-[400px] bg-gradient-to-br from-monitoring-bg to-secondary/20 rounded-lg overflow-hidden border border-border/50">
               <img 
                 src={indiaMapImage} 
@@ -321,6 +361,18 @@ const EnhancedDashboard = () => {
                 </div>
               </div>
             </div>
+            )}
+            
+            {/* Add error handling and image load events */}
+            {!mapError && (
+              <img 
+                src={indiaMapImage} 
+                alt="" 
+                className="hidden"
+                onError={() => setMapError(true)}
+                onLoad={() => setMapError(false)}
+              />
+            )}
           </Card>
 
           {/* Sensor Trends */}
@@ -460,7 +512,13 @@ const EnhancedDashboard = () => {
                 <Button 
                   size="sm" 
                   className="w-full justify-start"
-                  onClick={() => {/* Navigate to upload */}}
+                  onClick={() => {
+                    onTabChange?.('upload');
+                    toast({
+                      title: "Navigating to Upload",
+                      description: "Opening drone image upload interface",
+                    });
+                  }}
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Drone Images
@@ -469,7 +527,13 @@ const EnhancedDashboard = () => {
                   size="sm" 
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => {/* Navigate to prediction */}}
+                  onClick={() => {
+                    onTabChange?.('prediction');
+                    toast({
+                      title: "Navigating to Prediction",
+                      description: "Opening AI prediction interface",
+                    });
+                  }}
                 >
                   <Zap className="w-4 h-4 mr-2" />
                   Run Prediction
@@ -478,7 +542,13 @@ const EnhancedDashboard = () => {
                   size="sm" 
                   variant="outline"
                   className="w-full justify-start text-danger border-danger/30"
-                  onClick={() => {/* Navigate to alerts */}}
+                  onClick={() => {
+                    onTabChange?.('alerts');
+                    toast({
+                      title: "Navigating to Alerts",
+                      description: "Opening emergency alerts management",
+                    });
+                  }}
                 >
                   <AlertTriangle className="w-4 h-4 mr-2" />
                   Manage Alerts

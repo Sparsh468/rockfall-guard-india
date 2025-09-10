@@ -1,8 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, MapPin, TrendingUp, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, MapPin, TrendingUp, Clock, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 const RiskMap = () => {
+  const [mapError, setMapError] = useState(false);
   const mineLocations = [
     { id: 1, name: 'Jharia Coalfield', state: 'Jharkhand', risk: 'high', x: 68, y: 45, incidents: 12, lastUpdate: '2h ago' },
     { id: 2, name: 'Talcher Coalfield', state: 'Odisha', risk: 'medium', x: 72, y: 52, incidents: 6, lastUpdate: '4h ago' },
@@ -54,13 +58,54 @@ const RiskMap = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* India Map */}
         <Card className="xl:col-span-2 p-6">
-          <h3 className="text-lg font-semibold mb-4">India Mining Risk Map</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">India Mining Risk Map</h3>
+            <Button
+              onClick={() => {
+                setMapError(false);
+                toast({
+                  title: "Refreshing Map",
+                  description: "Updating mine location data...",
+                });
+              }}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+          
+          {mapError ? (
+            <div className="relative w-full h-[500px] bg-secondary/30 rounded-lg flex flex-col items-center justify-center space-y-4 border border-border">
+              <AlertTriangle className="w-12 h-12 text-warning" />
+              <div className="text-center space-y-2">
+                <p className="text-lg font-medium">Map Failed to Load</p>
+                <p className="text-sm text-muted-foreground">Unable to display the India mining risk map</p>
+              </div>
+              <Button 
+                onClick={() => {
+                  setMapError(false);
+                  toast({
+                    title: "Retrying Map Load",
+                    description: "Attempting to reload the mining risk map",
+                  });
+                }}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry Map Load
+              </Button>
+            </div>
+          ) : (
           <div className="relative w-full h-[500px] bg-monitoring-bg rounded-lg overflow-hidden">
             {/* Simplified India Map SVG */}
             <svg
               viewBox="0 0 100 100"
               className="w-full h-full"
               style={{ background: 'linear-gradient(45deg, hsl(var(--monitoring-bg)), hsl(var(--card)))' }}
+              onError={() => setMapError(true)}
             >
               {/* India outline - simplified */}
               <path
@@ -123,6 +168,7 @@ const RiskMap = () => {
               </div>
             </div>
           </div>
+          )}
         </Card>
 
         {/* Mine Details */}

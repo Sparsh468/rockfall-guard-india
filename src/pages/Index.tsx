@@ -168,7 +168,7 @@ const Index = () => {
   const renderActiveComponent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <EnhancedDashboard />;
+        return <EnhancedDashboard onTabChange={setActiveTab} />;
       case 'map':
         return <RiskMap />;
       case 'upload':
