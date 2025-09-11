@@ -22,6 +22,7 @@ interface SensorDataToggleProps {
   lastUpdate: Date | null;
   onRefresh: () => void;
   isRefreshing: boolean;
+  mineId?: string;
 }
 
 const SensorDataToggle = ({
@@ -30,7 +31,8 @@ const SensorDataToggle = ({
   isConnected,
   lastUpdate,
   onRefresh,
-  isRefreshing
+  isRefreshing,
+  mineId
 }: SensorDataToggleProps) => {
   const [isToggling, setIsToggling] = useState(false);
 
@@ -144,12 +146,16 @@ const SensorDataToggle = ({
       <div className="mt-3 text-sm text-muted-foreground">
         {mode === 'live' ? (
           isConnected ? (
-            "Receiving real-time data from IoT sensors deployed at mining sites"
+            mineId ? 
+              `Receiving real-time data from IoT sensors at mine ${mineId.slice(0, 8)}...` :
+              "Receiving real-time data from IoT sensors deployed at mining sites"
           ) : (
             "IoT connection unavailable. Check network connectivity or sensor status."
           )
         ) : (
-          "Using simulated sensor data with realistic fluctuations for demonstration"
+          mineId ?
+            `Using simulated sensor data for mine ${mineId.slice(0, 8)}... with unique characteristics` :
+            "Using simulated sensor data with realistic fluctuations for demonstration"
         )}
       </div>
     </Card>

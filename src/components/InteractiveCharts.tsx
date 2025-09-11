@@ -109,6 +109,7 @@ const InteractiveCharts = ({ mineId }: InteractiveChartsProps) => {
         lastUpdate={lastUpdate}
         onRefresh={handleRefresh}
         isRefreshing={isManualRefreshing}
+        mineId={mineId}
       />
 
       {/* Header Controls */}
@@ -116,7 +117,8 @@ const InteractiveCharts = ({ mineId }: InteractiveChartsProps) => {
         <div>
           <h2 className="text-2xl font-bold">Real-Time Sensor Analytics</h2>
           <p className="text-muted-foreground">
-            {dataMode === 'live' ? 'Live monitoring' : 'Simulated monitoring'} of critical rockfall indicators
+            {dataMode === 'live' ? 'Live IoT monitoring' : 'Simulated monitoring'} of critical rockfall indicators
+            {mineId && <span className="ml-2 text-primary">• Mine ID: {mineId.slice(0, 8)}...</span>}
           </p>
           {riskScore > 0.7 && (
             <Badge variant="destructive" className="mt-2 animate-pulse">

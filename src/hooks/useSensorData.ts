@@ -32,14 +32,28 @@ export const useSensorData = (options: UseSensorDataOptions) => {
   const generateSensorReading = useCallback((baseValues?: Partial<SensorReading>): SensorReading => {
     const now = new Date().toISOString();
     
-    // Base realistic values with some randomization
-    const baseDisplacement = baseValues?.displacement || 2.5;
-    const baseStrain = baseValues?.strain || 150;
-    const basePorePressure = baseValues?.pore_pressure || 45;
-    const baseRainfall = baseValues?.rainfall || 5;
-    const baseTemperature = baseValues?.temperature || 24;
-    const baseSlope = baseValues?.dem_slope || 15.5;
-    const baseCrackScore = baseValues?.crack_score || 3;
+    // Mine-specific base values to create unique patterns per mine
+    const mineSpecificFactors = mineId ? {
+      displacement: (parseInt(mineId.slice(-4), 16) % 10) / 5, // 0-2 range
+      strain: (parseInt(mineId.slice(-6, -2), 16) % 100) + 100, // 100-200 range
+      porePressure: (parseInt(mineId.slice(-8, -4), 16) % 40) + 30, // 30-70 range
+      rainfall: (parseInt(mineId.slice(-10, -6), 16) % 20) + 2, // 2-22 range
+      temperature: (parseInt(mineId.slice(-12, -8), 16) % 15) + 18, // 18-33 range
+      slope: (parseInt(mineId.slice(-14, -10), 16) % 20) + 10, // 10-30 range
+      crackScore: (parseInt(mineId.slice(-16, -12), 16) % 5) + 2 // 2-7 range
+    } : {
+      displacement: 2.5, strain: 150, porePressure: 45, rainfall: 5, 
+      temperature: 24, slope: 15.5, crackScore: 3
+    };
+    
+    // Base realistic values with mine-specific variation
+    const baseDisplacement = baseValues?.displacement || mineSpecificFactors.displacement;
+    const baseStrain = baseValues?.strain || mineSpecificFactors.strain;
+    const basePorePressure = baseValues?.pore_pressure || mineSpecificFactors.porePressure;
+    const baseRainfall = baseValues?.rainfall || mineSpecificFactors.rainfall;
+    const baseTemperature = baseValues?.temperature || mineSpecificFactors.temperature;
+    const baseSlope = baseValues?.dem_slope || mineSpecificFactors.slope;
+    const baseCrackScore = baseValues?.crack_score || mineSpecificFactors.crackScore;
 
     return {
       mine_id: mineId || 'default-mine',
@@ -88,12 +102,18 @@ export const useSensorData = (options: UseSensorDataOptions) => {
   const fetchLiveSensorData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('sensor_data')
         .select('*')
-        .eq(mineId ? 'mine_id' : 'id', mineId || 'any')
         .order('timestamp', { ascending: false })
         .limit(50);
+      
+      // Filter by mine if specified
+      if (mineId) {
+        query = query.eq('mine_id', mineId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -102,10 +122,11 @@ export const useSensorData = (options: UseSensorDataOptions) => {
         setCurrentReading(data[0]);
         setLastUpdate(new Date());
       } else {
-        // No live data available, fall back to simulated
+        // No live data available, generate initial simulated data
+        generateSimulatedData();
         toast({
-          title: "No Live Data",
-          description: "Falling back to simulated sensor data",
+          title: "No Live Data Available",
+          description: `No sensor data found for ${mineId ? 'selected mine' : 'any mine'}. Generated simulated data.`,
           variant: "default",
         });
       }
@@ -203,17 +224,21 @@ export const useSensorData = (options: UseSensorDataOptions) => {
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'sensor_data'
+            table: 'sensor_data',
+            filter: mineId ? `mine_id=eq.${mineId}` : undefined
           },
           (payload) => {
             const newReading = payload.new as SensorReading;
-            setSensorData(prev => [...prev.slice(-49), newReading]);
-            setCurrentReading(newReading);
-            setLastUpdate(new Date());
-            toast({
-              title: "Live Data Update",
-              description: "New sensor readings received",
-            });
+            // Only update if it's for the correct mine (when mineId is specified)
+            if (!mineId || newReading.mine_id === mineId) {
+              setSensorData(prev => [...prev.slice(-49), newReading]);
+              setCurrentReading(newReading);
+              setLastUpdate(new Date());
+              toast({
+                title: "Live IoT Data Update",
+                description: `New readings from ${mineId ? 'selected mine' : 'network'}`,
+              });
+            }
           }
         )
         .subscribe();
