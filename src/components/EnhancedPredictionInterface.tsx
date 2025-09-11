@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +50,7 @@ const EnhancedPredictionInterface = () => {
   });
 
   // Fetch mines on component mount
-  useState(() => {
+  useEffect(() => {
     const fetchMines = async () => {
       const { data } = await supabase
         .from('mines')
@@ -59,7 +59,48 @@ const EnhancedPredictionInterface = () => {
       setMines(data || []);
     };
     fetchMines();
-  });
+  }, []);
+
+  // Fetch latest sensor data for selected mine
+  const fetchSensorDataForMine = async (mineId: string) => {
+    if (!mineId) return;
+    
+    try {
+      const { data } = await supabase
+        .from('sensor_data')
+        .select('*')
+        .eq('mine_id', mineId)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        const latestData = data[0];
+        setPredictionParams(prev => ({
+          ...prev,
+          mine_id: mineId,
+          displacement: latestData.displacement || 0,
+          strain: latestData.strain || 0,
+          pore_pressure: latestData.pore_pressure || 0,
+          rainfall: latestData.rainfall || 0,
+          temperature: latestData.temperature || 0,
+          dem_slope: latestData.dem_slope || 0,
+          crack_score: latestData.crack_score || 0,
+        }));
+        
+        toast({
+          title: "Sensor data loaded",
+          description: "Latest sensor readings auto-populated for the selected mine.",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching sensor data:', error);
+      toast({
+        title: "Failed to load sensor data",
+        description: "Using default values. Please update manually if needed.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleInputChange = (field: keyof PredictionParams, value: string) => {
     setPredictionParams(prev => ({
@@ -163,7 +204,10 @@ const EnhancedPredictionInterface = () => {
               <Label htmlFor="mine">Select Mine</Label>
               <Select 
                 value={predictionParams.mine_id} 
-                onValueChange={(value) => handleInputChange('mine_id', value)}
+                onValueChange={(value) => {
+                  handleInputChange('mine_id', value);
+                  fetchSensorDataForMine(value);
+                }}
               >
                 <SelectTrigger className="mt-2">
                   <SelectValue placeholder="Choose a mine..." />
