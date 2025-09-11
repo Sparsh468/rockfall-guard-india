@@ -66,15 +66,15 @@ const EnhancedPredictionInterface = () => {
     if (!mineId) return;
     
     try {
-      const { data } = await supabase
+      const { data: sensorData } = await supabase
         .from('sensor_data')
         .select('*')
         .eq('mine_id', mineId)
         .order('timestamp', { ascending: false })
         .limit(1);
 
-      if (data && data.length > 0) {
-        const latestData = data[0];
+      if (sensorData && sensorData.length > 0) {
+        const latestData = sensorData[0];
         setPredictionParams(prev => ({
           ...prev,
           mine_id: mineId,
@@ -87,9 +87,19 @@ const EnhancedPredictionInterface = () => {
           crack_score: latestData.crack_score || 0,
         }));
         
+        // Get mine name for better user feedback
+        const selectedMine = mines.find(m => m.id === mineId);
+        const mineName = selectedMine?.name || 'Selected mine';
+        
         toast({
-          title: "Sensor data loaded",
-          description: "Latest sensor readings auto-populated for the selected mine.",
+          title: "Real-time data loaded",
+          description: `Latest sensor readings auto-populated for ${mineName}`,
+        });
+      } else {
+        toast({
+          title: "No sensor data available",
+          description: "Using default values. Manual input required.",
+          variant: "destructive",
         });
       }
     } catch (error) {

@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   LineChart, 
   Line, 
@@ -19,14 +20,18 @@ import { useState, useEffect } from "react";
 import { useSensorData } from "@/hooks/useSensorData";
 import SensorDataToggle from "./SensorDataToggle";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InteractiveChartsProps {
   mineId?: string;
 }
 
-const InteractiveCharts = ({ mineId }: InteractiveChartsProps) => {
+const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
   const [dataMode, setDataMode] = useState<'simulated' | 'live'>('simulated');
+  const [mines, setMines] = useState<any[]>([]);
+  const [selectedMine, setSelectedMine] = useState<string>(propMineId || '');
+  const [selectedMineName, setSelectedMineName] = useState<string>('');
   
   const { 
     sensorData, 
@@ -38,8 +43,41 @@ const InteractiveCharts = ({ mineId }: InteractiveChartsProps) => {
   } = useSensorData({ 
     mode: dataMode, 
     updateInterval: 5, 
-    mineId 
+    mineId: selectedMine 
   });
+
+  // Fetch mines on component mount
+  useEffect(() => {
+    const fetchMines = async () => {
+      const { data } = await supabase
+        .from('mines')
+        .select('id, name, location, state')
+        .order('name');
+      setMines(data || []);
+      
+      // Set initial mine name if mineId is provided
+      if (propMineId && data) {
+        const mine = data.find(m => m.id === propMineId);
+        if (mine) {
+          setSelectedMineName(mine.name);
+        }
+      }
+    };
+    fetchMines();
+  }, [propMineId]);
+
+  // Handle mine selection
+  const handleMineSelection = (mineId: string) => {
+    setSelectedMine(mineId);
+    const mine = mines.find(m => m.id === mineId);
+    if (mine) {
+      setSelectedMineName(mine.name);
+      toast({
+        title: "Mine Selected",
+        description: `Now showing data for ${mine.name}`,
+      });
+    }
+  };
 
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
@@ -109,7 +147,7 @@ const InteractiveCharts = ({ mineId }: InteractiveChartsProps) => {
         lastUpdate={lastUpdate}
         onRefresh={handleRefresh}
         isRefreshing={isManualRefreshing}
-        mineId={mineId}
+        mineId={selectedMine}
       />
 
       {/* Header Controls */}
@@ -118,7 +156,7 @@ const InteractiveCharts = ({ mineId }: InteractiveChartsProps) => {
           <h2 className="text-2xl font-bold">Real-Time Sensor Analytics</h2>
           <p className="text-muted-foreground">
             {dataMode === 'live' ? 'Live IoT monitoring' : 'Simulated monitoring'} of critical rockfall indicators
-            {mineId && <span className="ml-2 text-primary">• Mine ID: {mineId.slice(0, 8)}...</span>}
+            {selectedMineName && <span className="ml-2 text-primary">• {selectedMineName}</span>}
           </p>
           {riskScore > 0.7 && (
             <Badge variant="destructive" className="mt-2 animate-pulse">
@@ -127,6 +165,22 @@ const InteractiveCharts = ({ mineId }: InteractiveChartsProps) => {
           )}
         </div>
         <div className="flex items-center space-x-3">
+          {/* Mine Selection Dropdown */}
+          <div className="min-w-[200px]">
+            <Select value={selectedMine} onValueChange={handleMineSelection}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select mine..." />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-lg z-50">
+                {mines.map((mine) => (
+                  <SelectItem key={mine.id} value={mine.id}>
+                    {mine.name} - {mine.location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <div className="flex items-center space-x-1">
             {(['24h', '7d', '30d'] as const).map((range) => (
               <Button
