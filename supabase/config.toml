@@ -79,3 +79,6 @@ verify_jwt = false
 
 [functions.send-alert]
 verify_jwt = false
+
+[functions.fetch-weather-data]
+verify_jwt = false
