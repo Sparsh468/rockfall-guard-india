@@ -85,3 +85,9 @@ verify_jwt = false
 
 [functions.import-sensor-data]
 verify_jwt = false
+
+[functions.generate-mine-data]
+verify_jwt = false
+
+[functions.sync-weather-data]
+verify_jwt = false

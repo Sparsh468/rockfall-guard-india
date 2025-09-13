@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import MineSelector from './MineSelector';
+import AutoDataLoader from './AutoDataLoader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +58,7 @@ interface EnhancedDashboardProps {
 const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
   const { user, signOut } = useAuth();
   const [mines, setMines] = useState<Mine[]>([]);
+  const [selectedMine, setSelectedMine] = useState<Mine | null>(null);
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [highRiskAlerts, setHighRiskAlerts] = useState<Mine[]>([]);
@@ -73,9 +76,9 @@ const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
   } | null>(null);
 
   // Real-time sensor monitoring for risk assessment
-  const { riskScore: currentRiskScore, currentReading } = useSensorData({ 
+  const { riskScore: currentRiskScore, currentReading, sensorData: realTimeSensorData } = useSensorData({ 
     mode: 'simulated', 
-    mineId: mines[0]?.id 
+    mineId: selectedMine?.id 
   });
 
   const fetchData = async () => {
@@ -89,13 +92,23 @@ const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
       if (minesError) throw minesError;
       setMines(minesData || []);
 
-      // Fetch recent sensor data
-      const { data: sensorDataResult, error: sensorError } = await supabase
+      // Auto-select first mine if none selected
+      if (!selectedMine && minesData && minesData.length > 0) {
+        setSelectedMine(minesData[0]);
+      }
+
+      // Fetch sensor data for selected mine or all mines
+      let sensorQuery = supabase
         .from('sensor_data')
         .select('*')
         .order('timestamp', { ascending: false })
-        .limit(20);
+        .limit(50);
+      
+      if (selectedMine) {
+        sensorQuery = sensorQuery.eq('mine_id', selectedMine.id);
+      }
 
+      const { data: sensorDataResult, error: sensorError } = await sensorQuery;
       if (sensorError) throw sensorError;
       setSensorData(sensorDataResult || []);
 
@@ -253,6 +266,18 @@ const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
       </div>
 
       <div className="container mx-auto px-6 py-8">
+        {/* Auto Data Loader */}
+        <AutoDataLoader />
+        
+        {/* Mine Selector */}
+        <div className="mt-6">
+          <MineSelector 
+            onMineSelect={setSelectedMine} 
+            selectedMineId={selectedMine?.id}
+            autoLoadData={true}
+          />
+        </div>
+
         {/* Render content based on active section */}
         {activeSection === 'overview' && (
           <div className="space-y-8">
@@ -581,7 +606,7 @@ const EnhancedDashboard = ({ onTabChange }: EnhancedDashboardProps) => {
     {/* Analytics Section */}
     {activeSection === 'charts' && (
       <div className="space-y-8">
-        <InteractiveCharts mineId={mines[0]?.id} />
+        <InteractiveCharts selectedMine={selectedMine} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RecentUploadsPanel />
         </div>
