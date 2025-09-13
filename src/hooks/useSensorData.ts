@@ -10,6 +10,7 @@ export interface SensorReading {
   pore_pressure: number;
   rainfall: number;
   temperature: number;
+  dem_slope: number;
   crack_score: number;
   timestamp: string;
 }
@@ -38,16 +39,18 @@ export const useSensorData = (options: UseSensorDataOptions) => {
       porePressure: (parseInt(mineId.slice(-8, -4), 16) % 40) + 30, // 30-70 range
       rainfall: (parseInt(mineId.slice(-10, -6), 16) % 20) + 2, // 2-22 range (fallback)
       temperature: (parseInt(mineId.slice(-12, -8), 16) % 15) + 18, // 18-33 range (fallback)
+      slope: (parseInt(mineId.slice(-14, -10), 16) % 20) + 10, // 10-30 range
       crackScore: (parseInt(mineId.slice(-16, -12), 16) % 5) + 2 // 2-7 range
     } : {
       displacement: 2.5, strain: 150, porePressure: 45, rainfall: 5, 
-      temperature: 24, crackScore: 3
+      temperature: 24, slope: 15.5, crackScore: 3
     };
     
     // Base realistic values with mine-specific variation
     const baseDisplacement = baseValues?.displacement || mineSpecificFactors.displacement;
     const baseStrain = baseValues?.strain || mineSpecificFactors.strain;
     const basePorePressure = baseValues?.pore_pressure || mineSpecificFactors.porePressure;
+    const baseSlope = baseValues?.dem_slope || mineSpecificFactors.slope;
     const baseCrackScore = baseValues?.crack_score || mineSpecificFactors.crackScore;
 
     // Try to get real weather data
@@ -89,6 +92,7 @@ export const useSensorData = (options: UseSensorDataOptions) => {
       pore_pressure: Math.max(0, basePorePressure + (Math.random() - 0.5) * 8),
       rainfall: Math.max(0, realRainfall + (Math.random() - 0.5) * 2), // Real rainfall with minimal variation
       temperature: realTemperature + (Math.random() - 0.5) * 1, // Real temperature with minimal variation
+      dem_slope: Math.max(0, baseSlope + (Math.random() - 0.5) * 0.5),
       crack_score: Math.max(0, Math.min(10, baseCrackScore + (Math.random() - 0.5) * 2)),
       timestamp: now,
     };
