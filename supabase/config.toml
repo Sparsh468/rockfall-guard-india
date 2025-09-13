@@ -82,3 +82,6 @@ verify_jwt = false
 
 [functions.fetch-weather-data]
 verify_jwt = false
+
+[functions.import-sensor-data]
+verify_jwt = false

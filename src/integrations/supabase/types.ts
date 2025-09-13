@@ -128,7 +128,6 @@ export type Database = {
         Row: {
           crack_score: number | null
           created_at: string
-          dem_slope: number | null
           displacement: number | null
           id: string
           mine_id: string
@@ -141,7 +140,6 @@ export type Database = {
         Insert: {
           crack_score?: number | null
           created_at?: string
-          dem_slope?: number | null
           displacement?: number | null
           id?: string
           mine_id: string
@@ -154,7 +152,6 @@ export type Database = {
         Update: {
           crack_score?: number | null
           created_at?: string
-          dem_slope?: number | null
           displacement?: number | null
           id?: string
           mine_id?: string
