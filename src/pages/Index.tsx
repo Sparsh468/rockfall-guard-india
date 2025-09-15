@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import Auth from "@/components/Auth";
 import EnhancedDashboard from "@/components/EnhancedDashboard";
-import EnhancedUploadInterface from "@/components/EnhancedUploadInterface";
-import EnhancedPredictionInterface from "@/components/EnhancedPredictionInterface";
+import UnifiedUploadPrediction from "@/components/UnifiedUploadPrediction";
 import Navigation from "@/components/Navigation";
-import RiskMap from "@/components/RiskMap";
 import AlertInterface from "@/components/AlertInterface";
+import MiningAnalytics from "@/components/MiningAnalytics";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -169,14 +168,12 @@ const Index = () => {
     switch (activeTab) {
       case 'dashboard':
         return <EnhancedDashboard onTabChange={setActiveTab} />;
-      case 'map':
-        return <RiskMap />;
       case 'upload':
-        return <EnhancedUploadInterface />;
-      case 'prediction':
-        return <EnhancedPredictionInterface />;
+        return <UnifiedUploadPrediction />;
       case 'alerts':
         return <AlertInterface />;
+      case 'analytics':
+        return <MiningAnalytics />;
       default:
         return <EnhancedDashboard />;
     }
@@ -206,3 +203,5 @@ const Index = () => {
 };
 
 export default Index;
+
+

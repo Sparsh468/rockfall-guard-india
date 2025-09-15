@@ -15,9 +15,10 @@ import {
   BarChart,
   Bar
 } from "recharts";
-import { TrendingUp, TrendingDown, Activity, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, RefreshCw, Cloud, Wind, Droplets } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSensorData } from "@/hooks/useSensorData";
+import { useWeatherData } from "@/hooks/useWeatherData";
 import SensorDataToggle from "./SensorDataToggle";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,16 @@ const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
   const [mines, setMines] = useState<any[]>([]);
   const [selectedMine, setSelectedMine] = useState<string>(propMineId || '');
   const [selectedMineName, setSelectedMineName] = useState<string>('');
+  const [selectedMineData, setSelectedMineData] = useState<any>(null);
+  
+  // Weather data hook
+  const { weatherData, isLoading: weatherLoading, lastUpdate: weatherLastUpdate } = useWeatherData({
+    mineId: selectedMine,
+    latitude: selectedMineData?.latitude,
+    longitude: selectedMineData?.longitude,
+    updateInterval: 15, // 15 minutes
+    enabled: !!selectedMineData?.latitude && !!selectedMineData?.longitude
+  });
   
   const { 
     sensorData, 
@@ -42,8 +53,9 @@ const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
     updateSensorData 
   } = useSensorData({ 
     mode: dataMode, 
-    updateInterval: 5, 
-    mineId: selectedMine 
+    updateInterval: 900, // 15 minutes
+    mineId: selectedMine,
+    weatherData: weatherData
   });
 
   // Fetch mines on component mount
@@ -51,15 +63,16 @@ const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
     const fetchMines = async () => {
       const { data } = await supabase
         .from('mines')
-        .select('id, name, location, state')
+        .select('id, name, location, state, latitude, longitude')
         .order('name');
       setMines(data || []);
       
-      // Set initial mine name if mineId is provided
+      // Set initial mine name and data if mineId is provided
       if (propMineId && data) {
         const mine = data.find(m => m.id === propMineId);
         if (mine) {
           setSelectedMineName(mine.name);
+          setSelectedMineData(mine);
         }
       }
     };
@@ -72,6 +85,7 @@ const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
     const mine = mines.find(m => m.id === mineId);
     if (mine) {
       setSelectedMineName(mine.name);
+      setSelectedMineData(mine);
       toast({
         title: "Mine Selected",
         description: `Now showing data for ${mine.name}`,
@@ -203,6 +217,47 @@ const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
           </Button>
         </div>
       </div>
+
+      {/* Weather Information Card */}
+      {weatherData && (
+        <Card className="p-4 mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Cloud className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-blue-900">Real-time Weather</h3>
+                <p className="text-sm text-blue-700">{weatherData.description}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-900">{weatherData.temperature}°C</div>
+              <div className="text-sm text-blue-700">Humidity: {weatherData.humidity}%</div>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+            <div>
+              <Droplets className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <div className="text-sm font-medium text-blue-900">{weatherData.rainfall}mm</div>
+              <div className="text-xs text-blue-700">Rainfall</div>
+            </div>
+            <div>
+              <Wind className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <div className="text-sm font-medium text-blue-900">{weatherData.windSpeed}m/s</div>
+              <div className="text-xs text-blue-700">Wind Speed</div>
+            </div>
+            <div>
+              <Activity className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+              <div className="text-sm font-medium text-blue-900">{weatherData.pressure}hPa</div>
+              <div className="text-xs text-blue-700">Pressure</div>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-blue-600">
+            Last updated: {weatherLastUpdate ? new Date(weatherLastUpdate).toLocaleString() : 'Never'}
+          </div>
+        </Card>
+      )}
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">

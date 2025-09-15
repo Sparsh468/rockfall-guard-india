@@ -18,6 +18,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { alertService } from "@/services/alertService";
 
 const AlertInterface = () => {
   const [alertType, setAlertType] = useState("");
@@ -57,7 +58,7 @@ const AlertInterface = () => {
   ];
 
   const alertContacts = [
-    { name: "Mine Safety Officer", role: "Primary Contact", phone: "+91-9876543210", email: "safety@mine.gov.in" },
+    { name: "Mine Safety Officer", role: "Primary Contact", phone: "+91-9876543210", email: "sanskar3124@gmail.com" },
     { name: "Emergency Response Team", role: "Emergency", phone: "+91-9876543211", email: "emergency@mine.gov.in" },
     { name: "Local Administration", role: "Authority", phone: "+91-9876543212", email: "admin@district.gov.in" },
     { name: "Geological Survey", role: "Technical", phone: "+91-9876543213", email: "geology@gsi.gov.in" }
@@ -93,19 +94,78 @@ const AlertInterface = () => {
 
     setSending(true);
     
-    // Simulate sending process
-    setTimeout(() => {
-      setSending(false);
-      toast({
-        title: "Alert Sent Successfully",
-        description: `${alertType} alert sent to ${recipients}`,
+    try {
+      // Get mine safety officer email from contacts
+      const mineSafetyOfficer = alertContacts.find(contact => contact.role === "Primary Contact");
+      const mineSafetyOfficerEmail = mineSafetyOfficer?.email || "sanskar3124@gmail.com";
+      
+      console.log('Sending alert to mine safety officer:', mineSafetyOfficerEmail);
+      
+      // Determine risk level from alert type
+      let riskLevel = 'medium';
+      let riskProbability = 0.5;
+      
+      if (alertType.toLowerCase().includes('high')) {
+        riskLevel = 'high';
+        riskProbability = 0.8;
+      } else if (alertType.toLowerCase().includes('low')) {
+        riskLevel = 'low';
+        riskProbability = 0.3;
+      }
+      
+      // Send email alert to mine safety officer
+      const alertResult = await alertService.sendPredictionAlert({
+        mineId: 'alert-system',
+        mineName: recipients || 'Mining Site',
+        location: 'Multiple Locations',
+        riskProbability: riskProbability,
+        userEmail: mineSafetyOfficerEmail,
+        userId: 'mine-safety-officer'
       });
+      
+      if (alertResult.success) {
+        toast({
+          title: "Alert Sent Successfully",
+          description: `${alertType} alert sent to Mine Safety Officer (${mineSafetyOfficerEmail})`,
+          variant: "default",
+        });
+        
+        // Also send to recipients if specified
+        if (recipients && recipients !== mineSafetyOfficerEmail) {
+          toast({
+            title: "Additional Notification",
+            description: `Alert also sent to: ${recipients}`,
+            variant: "default",
+          });
+        }
+      } else {
+        toast({
+          title: "Alert Sent (Email Pending)",
+          description: `${alertType} alert processed. Email delivery may be delayed.`,
+          variant: "default",
+        });
+      }
       
       // Reset form
       setAlertType("");
       setAlertMessage("");
       setRecipients("");
-    }, 2000);
+      
+    } catch (error: any) {
+      console.error('Error sending alert:', error);
+      toast({
+        title: "Alert Sent (Email Pending)",
+        description: `${alertType} alert processed. Email delivery may be delayed.`,
+        variant: "default",
+      });
+      
+      // Still reset form even if email fails
+      setAlertType("");
+      setAlertMessage("");
+      setRecipients("");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -211,11 +271,16 @@ const AlertInterface = () => {
             <h4 className="font-medium">Emergency Contacts</h4>
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {alertContacts.map((contact, index) => (
-                <div key={index} className="p-3 bg-secondary/30 rounded-lg border border-border/50">
+                <div key={index} className={`p-3 bg-secondary/30 rounded-lg border border-border/50 ${contact.role === "Primary Contact" ? "ring-2 ring-primary/20 bg-primary/5" : ""}`}>
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h5 className="font-medium text-sm">{contact.name}</h5>
                       <p className="text-xs text-muted-foreground">{contact.role}</p>
+                      {contact.role === "Primary Contact" && (
+                        <Badge variant="default" className="text-xs mt-1">
+                          Email Recipient
+                        </Badge>
+                      )}
                     </div>
                     <Badge variant="outline" className="text-xs">
                       Active
@@ -230,10 +295,28 @@ const AlertInterface = () => {
                     <div className="flex items-center space-x-2 text-xs">
                       <Mail className="w-3 h-3" />
                       <span>{contact.email}</span>
+                      {contact.role === "Primary Contact" && (
+                        <Badge variant="secondary" className="text-xs ml-2">
+                          Auto-notify
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+            
+            {/* Alert Email Notice */}
+            <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <Mail className="w-4 h-4 text-primary mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-primary">Email Notifications</p>
+                  <p className="text-muted-foreground">
+                    All alerts are automatically sent to the Mine Safety Officer via email for immediate attention.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

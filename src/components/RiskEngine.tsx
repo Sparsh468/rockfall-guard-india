@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useSensorData } from '@/hooks/useSensorData';
+import { useWeatherData } from '@/hooks/useWeatherData';
 import { 
   AlertTriangle, 
   Shield, 
@@ -30,9 +31,34 @@ interface RiskThresholds {
 }
 
 const RiskEngine = ({ mineId, onAlertTriggered }: RiskEngineProps) => {
+  // Get mine coordinates for weather data
+  const [mineData, setMineData] = useState<any>(null);
+  
+  useEffect(() => {
+    const fetchMineData = async () => {
+      if (!mineId) return;
+      const { data } = await supabase
+        .from('mines')
+        .select('latitude, longitude')
+        .eq('id', mineId)
+        .single();
+      setMineData(data);
+    };
+    fetchMineData();
+  }, [mineId]);
+
+  const { weatherData } = useWeatherData({
+    mineId,
+    latitude: mineData?.latitude,
+    longitude: mineData?.longitude,
+    updateInterval: 15,
+    enabled: !!mineData?.latitude && !!mineData?.longitude
+  });
+
   const { currentReading, riskScore } = useSensorData({ 
     mode: 'simulated', 
-    mineId: mineId || 'default-mine' 
+    mineId: mineId || 'default-mine',
+    weatherData: weatherData
   });
 
   const [lastAlertLevel, setLastAlertLevel] = useState<string>('');
@@ -139,6 +165,78 @@ const RiskEngine = ({ mineId, onAlertTriggered }: RiskEngineProps) => {
     return alerts;
   };
 
+  // Audio alert functions
+  const playHighRiskSiren = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Create siren effect
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.5);
+    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 1);
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 1);
+  };
+
+  const playMediumRiskBeep = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  };
+
+  const playLowRiskBeep = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
+  };
+
+  const playAudioAlert = (riskLevel: string) => {
+    switch (riskLevel) {
+      case 'high':
+        playHighRiskSiren();
+        break;
+      case 'medium':
+        playMediumRiskBeep();
+        break;
+      case 'low':
+        playLowRiskBeep();
+        break;
+    }
+  };
+
   const triggerAlert = async (level: string, message: string, parameters: any[]) => {
     try {
       // Store alert in database
@@ -165,6 +263,9 @@ const RiskEngine = ({ mineId, onAlertTriggered }: RiskEngineProps) => {
           })
           .eq('id', mineId);
       }
+
+      // Play audio alert
+      playAudioAlert(level);
 
       // Notify parent component
       onAlertTriggered?.(level, message);
@@ -197,6 +298,10 @@ const RiskEngine = ({ mineId, onAlertTriggered }: RiskEngineProps) => {
       triggerAlert('high', message, highSeverityAlerts);
     } else if (currentRiskLevel === 'medium' && lastAlertLevel !== 'medium' && lastAlertLevel !== 'high') {
       triggerAlert('medium', 'Elevated risk conditions detected - Monitor closely', parameterAlerts);
+    } else if (currentRiskLevel === 'low' && lastAlertLevel !== 'low') {
+      // Play single beep for low risk (safe condition)
+      playAudioAlert('low');
+      setLastAlertLevel('low');
     }
 
     setAlertHistory(parameterAlerts);

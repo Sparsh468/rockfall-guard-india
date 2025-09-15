@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, TrendingUp, AlertTriangle, Users, Activity, MapPin, Clock } from "lucide-react";
+import React, { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
-import indiaMapImage from "@/assets/india-map.jpg";
 
 interface DashboardProps {
   onNavigate: (tab: string) => void;
@@ -31,15 +32,9 @@ const riskDistribution = [
   { name: 'Low Risk', value: 20, color: 'hsl(var(--safe))' }
 ];
 
-const mineLocations = [
-  { id: 1, name: 'Jharia Coalfield', state: 'Jharkhand', risk: 'high', x: 68, y: 45, incidents: 12 },
-  { id: 2, name: 'Talcher Coalfield', state: 'Odisha', risk: 'medium', x: 72, y: 52, incidents: 6 },
-  { id: 3, name: 'Korba Coalfield', state: 'Chhattisgarh', risk: 'high', x: 65, y: 55, incidents: 8 },
-  { id: 4, name: 'Raniganj Coalfield', state: 'West Bengal', risk: 'low', x: 75, y: 48, incidents: 2 },
-  { id: 5, name: 'Singrauli Coalfield', state: 'Madhya Pradesh', risk: 'medium', x: 62, y: 50, incidents: 4 },
-];
 
 const Dashboard = ({ onNavigate }: DashboardProps) => {
+
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'high': return 'bg-danger';
@@ -57,6 +52,7 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
       default: return 'text-muted-foreground';
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -111,72 +107,7 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Interactive India Map */}
-        <Card className="xl:col-span-2 p-6 overflow-hidden group">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Live India Mining Risk Map</h3>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              <span className="text-sm text-muted-foreground">Live Updates</span>
-            </div>
-          </div>
-          <div className="relative w-full h-[400px] bg-gradient-to-br from-monitoring-bg to-secondary/20 rounded-lg overflow-hidden border border-border/50">
-            <img 
-              src={indiaMapImage} 
-              alt="India Map" 
-              className="absolute inset-0 w-full h-full object-contain opacity-60 group-hover:opacity-80 transition-opacity duration-500"
-            />
-            
-            {/* Interactive Mine Locations */}
-            <div className="absolute inset-0">
-              {mineLocations.map((mine) => (
-                <div
-                  key={mine.id}
-                  className="absolute group/mine cursor-pointer"
-                  style={{ left: `${mine.x}%`, top: `${mine.y}%` }}
-                >
-                  <div className={`w-4 h-4 rounded-full ${getRiskColor(mine.risk)} 
-                    animate-pulse shadow-lg transform group-hover/mine:scale-125 transition-transform duration-300
-                    ${mine.risk === 'high' ? 'shadow-danger/50' : mine.risk === 'medium' ? 'shadow-warning/50' : 'shadow-safe/50'}`}
-                  />
-                  
-                  {/* Tooltip */}
-                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 
-                    bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 
-                    opacity-0 group-hover/mine:opacity-100 transition-opacity duration-300 pointer-events-none
-                    min-w-[180px] z-10 shadow-lg">
-                    <p className="font-medium text-sm">{mine.name}</p>
-                    <p className="text-xs text-muted-foreground">{mine.state}</p>
-                    <p className={`text-xs mt-1 ${getRiskTextColor(mine.risk)}`}>
-                      {mine.risk.toUpperCase()} RISK • {mine.incidents} incidents
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Legend */}
-            <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3">
-              <h4 className="text-sm font-medium mb-2">Risk Levels</h4>
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-danger rounded-full animate-pulse" />
-                  <span className="text-xs">High Risk</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-warning rounded-full animate-pulse" />
-                  <span className="text-xs">Medium Risk</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-safe rounded-full animate-pulse" />
-                  <span className="text-xs">Low Risk</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-6">
         {/* Risk Distribution Pie Chart */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Risk Distribution</h3>
@@ -284,43 +215,17 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
         </ResponsiveContainer>
       </Card>
 
-      {/* Enhanced Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Enhanced Action Button */}
+      <div className="flex justify-center">
         <Button 
           size="lg" 
-          className="h-20 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 
+          className="h-20 w-full max-w-md bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 
             shadow-lg hover:shadow-primary/25 transition-all duration-300 group"
           onClick={() => onNavigate('upload')}
         >
           <div className="flex flex-col items-center space-y-1">
-            <Upload className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-            <span className="text-sm font-medium">Upload Drone Images</span>
-          </div>
-        </Button>
-        
-        <Button 
-          size="lg" 
-          variant="outline" 
-          className="h-20 border-primary/30 hover:bg-primary/10 hover:border-primary/50 
-            shadow-lg hover:shadow-primary/20 transition-all duration-300 group"
-          onClick={() => onNavigate('prediction')}
-        >
-          <div className="flex flex-col items-center space-y-1">
             <TrendingUp className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
-            <span className="text-sm font-medium">Predict Rockfall</span>
-          </div>
-        </Button>
-        
-        <Button 
-          size="lg" 
-          variant="outline" 
-          className="h-20 border-danger/30 hover:bg-danger/10 hover:border-danger/50 text-danger hover:text-danger
-            shadow-lg hover:shadow-danger/20 transition-all duration-300 group"
-          onClick={() => onNavigate('alerts')}
-        >
-          <div className="flex flex-col items-center space-y-1">
-            <AlertTriangle className="w-6 h-6 group-hover:scale-110 transition-transform duration-300 animate-pulse" />
-            <span className="text-sm font-medium">Manage Alerts</span>
+            <span className="text-sm font-medium">Analysis & Prediction</span>
           </div>
         </Button>
       </div>

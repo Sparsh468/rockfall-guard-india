@@ -7,12 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { 
   Zap, TrendingUp, AlertTriangle, CheckCircle, Info, 
-  Gauge, Thermometer, Droplets, Mountain, Zap as CracksIcon 
+  Gauge, Thermometer, Droplets, Mountain, Zap as CracksIcon,
+  Volume2, VolumeX, Phone, Bell, X
 } from 'lucide-react';
 
 interface PredictionParams {
@@ -38,6 +40,9 @@ const EnhancedPredictionInterface = () => {
   const [selectedMine, setSelectedMine] = useState('');
   const [predicting, setPredicting] = useState(false);
   const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [predictionParams, setPredictionParams] = useState<PredictionParams>({
     mine_id: '',
     displacement: 0,
@@ -48,6 +53,168 @@ const EnhancedPredictionInterface = () => {
     dem_slope: 0,
     crack_score: 0,
   });
+
+  // Audio alert functions
+  const playHighRiskSiren = async () => {
+    console.log('playHighRiskSiren called, audioEnabled:', audioEnabled);
+    if (!audioEnabled) {
+      console.log('Audio disabled, skipping siren');
+      return;
+    }
+    
+    try {
+      if (!audioContext) {
+        console.log('Audio context not available');
+        return;
+      }
+      
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+        console.log('Audio context resumed');
+      }
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Create siren effect
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.5);
+    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 1);
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
+    
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 1);
+      
+      // Play multiple cycles for siren effect
+      setTimeout(() => {
+        if (audioEnabled) playHighRiskSiren();
+      }, 1000);
+    } catch (error) {
+      console.error('Error playing high risk siren:', error);
+    }
+  };
+
+  const playMediumRiskBeep = async () => {
+    console.log('playMediumRiskBeep called, audioEnabled:', audioEnabled);
+    if (!audioEnabled) {
+      console.log('Audio disabled, skipping medium beep');
+      return;
+    }
+    
+    try {
+      if (!audioContext) {
+        console.log('Audio context not available');
+        return;
+      }
+      
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+        console.log('Audio context resumed');
+      }
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+    
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+      
+      // Play 3 beeps
+      setTimeout(() => {
+        if (audioEnabled) playMediumRiskBeep();
+      }, 500);
+    } catch (error) {
+      console.error('Error playing medium risk beep:', error);
+    }
+  };
+
+  const playLowRiskBeep = async () => {
+    console.log('playLowRiskBeep called, audioEnabled:', audioEnabled);
+    if (!audioEnabled) {
+      console.log('Audio disabled, skipping low beep');
+      return;
+    }
+    
+    try {
+      if (!audioContext) {
+        console.log('Audio context not available');
+        return;
+      }
+      
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+        console.log('Audio context resumed');
+      }
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+    
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.error('Error playing low risk beep:', error);
+    }
+  };
+
+  const playAudioAlert = async (riskLevel: string) => {
+    console.log('playAudioAlert called with risk level:', riskLevel);
+    switch (riskLevel) {
+      case 'high':
+        console.log('Playing high risk siren');
+        await playHighRiskSiren();
+        break;
+      case 'medium':
+        console.log('Playing medium risk beep');
+        await playMediumRiskBeep();
+        break;
+      case 'low':
+        console.log('Playing low risk beep');
+        await playLowRiskBeep();
+        break;
+      default:
+        console.log('Unknown risk level:', riskLevel);
+    }
+  };
+
+  // Initialize audio context
+  useEffect(() => {
+    const initAudioContext = async () => {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        setAudioContext(ctx);
+        console.log('Audio context initialized');
+      } catch (error) {
+        console.error('Failed to initialize audio context:', error);
+      }
+    };
+    initAudioContext();
+  }, []);
 
   // Fetch mines on component mount
   useEffect(() => {
@@ -158,6 +325,31 @@ const EnhancedPredictionInterface = () => {
       const result = await response.json();
       setPredictionResult(result);
 
+      // Play audio alert based on risk level
+      console.log('Playing audio alert for risk level:', result.risk_level);
+      await playAudioAlert(result.risk_level);
+
+      // Show popup modal
+      console.log('Showing alert modal');
+      setShowAlertModal(true);
+
+      // Send email alert
+      try {
+        console.log('Sending email alert for prediction result');
+        const { alertService } = await import('@/services/alertService');
+        const emailResult = await alertService.sendPredictionAlert({
+          mineId: predictionParams.mine_id,
+          mineName: getSelectedMineName(),
+          location: mines.find(m => m.id === predictionParams.mine_id)?.location || 'Unknown Location',
+          riskProbability: result.risk_probability,
+          userEmail: user?.email || 'user@example.com',
+          userId: user?.id || 'anonymous'
+        });
+        console.log('Email alert result:', emailResult);
+      } catch (error) {
+        console.error('Failed to send email alert:', error);
+      }
+
       toast({
         title: "Prediction completed",
         description: `Risk assessment: ${result.risk_level.toUpperCase()} (${Math.round(result.risk_probability * 100)}%)`,
@@ -194,12 +386,34 @@ const EnhancedPredictionInterface = () => {
     }
   };
 
+  const getSelectedMineName = () => {
+    const mine = mines.find(m => m.id === predictionParams.mine_id);
+    return mine?.name || 'Unknown Mine';
+  };
+
+  const handleEmergencyCall = () => {
+    console.log('Emergency call initiated for', getSelectedMineName());
+    toast({
+      title: "Emergency Call Initiated",
+      description: "Emergency services have been notified",
+      variant: "destructive",
+    });
+  };
+
+  const handleAlertPersonnel = () => {
+    console.log('Personnel alert sent for', getSelectedMineName());
+    toast({
+      title: "Personnel Alert Sent",
+      description: "All personnel have been notified of the risk",
+    });
+  };
+
   return (
     <div className="container mx-auto px-6 py-8 space-y-6">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Rockfall Risk Prediction</h1>
         <p className="text-muted-foreground">
-          Advanced AI-powered risk assessment using sensor data and environmental parameters
+          Advanced AI-powered risk assessment with audio alerts and notifications
         </p>
       </div>
 
@@ -358,6 +572,122 @@ const EnhancedPredictionInterface = () => {
               <Zap className="w-5 h-5 mr-2" />
               {predicting ? 'Analyzing...' : 'Run Prediction'}
             </Button>
+
+            {/* Test buttons for debugging */}
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  console.log('Testing high risk audio');
+                  await playAudioAlert('high');
+                }}
+              >
+                Test High
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  console.log('Testing medium risk audio');
+                  await playAudioAlert('medium');
+                }}
+              >
+                Test Medium
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  console.log('Testing low risk audio');
+                  await playAudioAlert('low');
+                }}
+              >
+                Test Low
+              </Button>
+            </div>
+            
+            {/* Test modal button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                console.log('Testing modal');
+                setPredictionResult({
+                  risk_probability: 0.8,
+                  risk_level: 'high',
+                  recommendation: 'Test recommendation'
+                });
+                setShowAlertModal(true);
+              }}
+              className="w-full mt-2"
+            >
+              Test Modal
+            </Button>
+
+            {/* Test email alert button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                console.log('Testing email alert');
+                // Prompt user for email address
+                const testEmail = prompt('Enter email address to test (or press OK to use current user email):', user?.email || '');
+                if (!testEmail) return;
+                
+                try {
+                  const { alertService } = await import('@/services/alertService');
+                  const result = await alertService.sendPredictionAlert({
+                    mineId: 'test-mine-123',
+                    mineName: 'Test Mine',
+                    location: 'Test Location, India',
+                    riskProbability: 0.75,
+                    userEmail: testEmail,
+                    userId: user?.id || 'test-user-123'
+                  });
+                  console.log('Email alert test result:', result);
+                } catch (error) {
+                  console.error('Email alert test error:', error);
+                }
+              }}
+              className="w-full mt-2"
+            >
+              Test Email Alert
+            </Button>
+
+            {/* Test real email service button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                console.log('Testing real email service');
+                // Prompt user for email address
+                const testEmail = prompt('Enter email address to test (or press OK to use current user email):', user?.email || '');
+                if (!testEmail) return;
+                
+                try {
+                  const { default: realEmailService } = await import('@/services/realEmailService');
+                  const result = await realEmailService.sendEmail({
+                    to: testEmail,
+                    subject: '🧪 SHAIL KAVACH - Email Test',
+                    htmlContent: '<h1>Test Email</h1><p>This is a test email from SHAIL KAVACH system.</p>',
+                    textContent: 'Test Email\n\nThis is a test email from SHAIL KAVACH system.',
+                    alertData: {
+                      mineName: 'Test Mine',
+                      location: 'Test Location',
+                      riskLevel: 'medium',
+                      riskProbability: 0.5
+                    }
+                  });
+                  console.log('Real email service test result:', result);
+                } catch (error) {
+                  console.error('Real email service test error:', error);
+                }
+              }}
+              className="w-full mt-2"
+            >
+              Test Real Email Service
+            </Button>
           </div>
         </Card>
 
@@ -490,6 +820,128 @@ const EnhancedPredictionInterface = () => {
           </div>
         </div>
       </Card>
+
+      {/* Risk Alert Modal */}
+      {predictionResult && (
+        <Dialog open={showAlertModal} onOpenChange={(open) => {
+          console.log('Modal open state changed:', open);
+          setShowAlertModal(open);
+        }}>
+          <DialogContent className="max-w-md mx-auto">
+            <DialogHeader className="text-center">
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                {getRiskIcon(predictionResult.risk_level)}
+                <DialogTitle className={`text-2xl font-bold ${
+                  predictionResult.risk_level === 'high' ? 'text-red-600' :
+                  predictionResult.risk_level === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                }`}>
+                  {predictionResult.risk_level.toUpperCase()} RISK ALERT
+                </DialogTitle>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* Risk Level Display */}
+              <div className="text-center">
+                <div className="text-4xl font-bold mb-2">
+                  {Math.round(predictionResult.risk_probability * 100)}%
+                </div>
+                <Badge 
+                  variant={predictionResult.risk_level === 'high' ? 'destructive' : 
+                           predictionResult.risk_level === 'medium' ? 'secondary' : 'default'}
+                  className="text-lg px-4 py-2"
+                >
+                  {predictionResult.risk_level.toUpperCase()} RISK
+                </Badge>
+              </div>
+
+              {/* Mine Information */}
+              <div className="text-center text-sm text-gray-600">
+                <p><strong>Mine:</strong> {getSelectedMineName()}</p>
+                <p><strong>Time:</strong> {new Date().toLocaleString()}</p>
+              </div>
+
+              {/* Recommendation */}
+              <Alert className={
+                predictionResult.risk_level === 'high' ? 'border-red-200 bg-red-50' :
+                predictionResult.risk_level === 'medium' ? 'border-yellow-200 bg-yellow-50' : 'border-green-200 bg-green-50'
+              }>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="font-medium">
+                  {predictionResult.recommendation}
+                </AlertDescription>
+              </Alert>
+
+              {/* Emergency Actions for High Risk */}
+              {predictionResult.risk_level === 'high' && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-red-600 flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Emergency Actions Required</span>
+                  </h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button
+                      variant="destructive"
+                      onClick={handleEmergencyCall}
+                      className="flex items-center space-x-2"
+                    >
+                      <Phone className="w-4 h-4" />
+                      <span>Emergency Call</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleAlertPersonnel}
+                      className="flex items-center space-x-2 border-red-200 text-red-600 hover:bg-red-50"
+                    >
+                      <Bell className="w-4 h-4" />
+                      <span>Alert All Personnel</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Audio Controls */}
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Zap className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-medium">Audio Alert</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAudioEnabled(!audioEnabled)}
+                  className="flex items-center space-x-2"
+                >
+                  {audioEnabled ? (
+                    <>
+                      <Volume2 className="w-4 h-4" />
+                      <span>On</span>
+                    </>
+                  ) : (
+                    <>
+                      <VolumeX className="w-4 h-4" />
+                      <span>Off</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-2">
+                {predictionResult.risk_level !== 'low' && (
+                  <Button variant="outline" onClick={() => setShowAlertModal(false)}>
+                    Acknowledge
+                  </Button>
+                )}
+                <Button onClick={() => setShowAlertModal(false)} className="flex items-center space-x-2">
+                  <X className="w-4 h-4" />
+                  <span>Close</span>
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

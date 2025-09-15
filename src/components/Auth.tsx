@@ -85,9 +85,9 @@ const Auth = () => {
               <div className="p-3 bg-primary/20 rounded-xl">
                 <Shield className="w-8 h-8 text-primary" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                RockFall Guard India
-              </h1>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                  SHAIL KAVACH
+                </h1>
             </div>
             <p className="text-xl text-muted-foreground">
               Advanced AI-powered rockfall prediction and monitoring system for Indian mining operations

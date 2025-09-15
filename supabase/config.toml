@@ -44,7 +44,7 @@ image_transformation = { enabled = true }
 
 [auth]
 enabled = true
-additional_redirect_urls = ["https://rockfall-guard-india.lovable.app"]
+additional_redirect_urls = ["https://shailkavach.lovable.app"]
 jwt_expiry = 3600
 enable_signup = true
 enable_email_confirmations = false
@@ -78,4 +78,10 @@ backend = "postgres"
 verify_jwt = false
 
 [functions.send-alert]
+verify_jwt = false
+
+[functions.send-email-alert]
+verify_jwt = false
+
+[functions.send-gmail-alert]
 verify_jwt = false

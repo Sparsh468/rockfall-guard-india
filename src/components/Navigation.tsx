@@ -2,13 +2,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/AuthProvider";
 import { 
-  Map, 
-  Upload, 
   TrendingUp, 
   AlertTriangle,
   Home,
   LogOut,
-  User
+  User,
+  BarChart3
 } from "lucide-react";
 
 interface NavigationProps {
@@ -21,10 +20,8 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
   
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'map', label: 'Risk Map', icon: Map },
-    { id: 'upload', label: 'Upload', icon: Upload },
-    { id: 'prediction', label: 'Prediction', icon: TrendingUp },
-    { id: 'alerts', label: 'Alerts', icon: AlertTriangle },
+    { id: 'upload', label: 'Analysis & Prediction', icon: TrendingUp },
+    { id: 'analytics', label: 'Mining Analytics', icon: BarChart3 },
   ];
 
   const handleSignOut = async () => {
@@ -39,9 +36,9 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">
-              Rockfall Guard India
-            </h1>
+             <h1 className="text-xl font-bold text-foreground">
+               SHAIL KAVACH
+             </h1>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -90,3 +87,4 @@ const Navigation = ({ activeTab, onTabChange }: NavigationProps) => {
 };
 
 export default Navigation;
+
