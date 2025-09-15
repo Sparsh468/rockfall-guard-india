@@ -124,7 +124,6 @@ const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
     pore_pressure: reading.pore_pressure, // Fixed typo
     rainfall: reading.rainfall,
     temperature: reading.temperature,
-    slope: reading.dem_slope,
     strain: reading.strain,
     crack_score: reading.crack_score
   }));
@@ -293,14 +292,6 @@ const InteractiveCharts = ({ mineId: propMineId }: InteractiveChartsProps) => {
             unit: '°C',
             color: 'text-safe',
             bgColor: 'bg-safe/10'
-          },
-          { 
-            key: 'slope', 
-            label: 'Slope Angle', 
-            value: currentReading?.dem_slope,
-            unit: '°',
-            color: 'text-accent',
-            bgColor: 'bg-accent/10'
           },
           { 
             key: 'strain', 

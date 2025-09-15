@@ -10,7 +10,6 @@ export interface SensorReading {
   pore_pressure: number;
   rainfall: number;
   temperature: number;
-  dem_slope: number;
   crack_score: number;
   timestamp: string;
 }
@@ -28,8 +27,8 @@ export const useSensorData = (options: UseSensorDataOptions) => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [currentReading, setCurrentReading] = useState<SensorReading | null>(null);
 
-  // Generate realistic sensor data
-  const generateSensorReading = useCallback((baseValues?: Partial<SensorReading>): SensorReading => {
+  // Generate realistic sensor data with real weather integration
+  const generateSensorReading = useCallback(async (baseValues?: Partial<SensorReading>): Promise<SensorReading> => {
     const now = new Date().toISOString();
     
     // Mine-specific base values to create unique patterns per mine
@@ -37,32 +36,59 @@ export const useSensorData = (options: UseSensorDataOptions) => {
       displacement: (parseInt(mineId.slice(-4), 16) % 10) / 5, // 0-2 range
       strain: (parseInt(mineId.slice(-6, -2), 16) % 100) + 100, // 100-200 range
       porePressure: (parseInt(mineId.slice(-8, -4), 16) % 40) + 30, // 30-70 range
-      rainfall: (parseInt(mineId.slice(-10, -6), 16) % 20) + 2, // 2-22 range
-      temperature: (parseInt(mineId.slice(-12, -8), 16) % 15) + 18, // 18-33 range
-      slope: (parseInt(mineId.slice(-14, -10), 16) % 20) + 10, // 10-30 range
+      rainfall: (parseInt(mineId.slice(-10, -6), 16) % 20) + 2, // 2-22 range (fallback)
+      temperature: (parseInt(mineId.slice(-12, -8), 16) % 15) + 18, // 18-33 range (fallback)
       crackScore: (parseInt(mineId.slice(-16, -12), 16) % 5) + 2 // 2-7 range
     } : {
       displacement: 2.5, strain: 150, porePressure: 45, rainfall: 5, 
-      temperature: 24, slope: 15.5, crackScore: 3
+      temperature: 24, crackScore: 3
     };
     
     // Base realistic values with mine-specific variation
     const baseDisplacement = baseValues?.displacement || mineSpecificFactors.displacement;
     const baseStrain = baseValues?.strain || mineSpecificFactors.strain;
     const basePorePressure = baseValues?.pore_pressure || mineSpecificFactors.porePressure;
-    const baseRainfall = baseValues?.rainfall || mineSpecificFactors.rainfall;
-    const baseTemperature = baseValues?.temperature || mineSpecificFactors.temperature;
-    const baseSlope = baseValues?.dem_slope || mineSpecificFactors.slope;
     const baseCrackScore = baseValues?.crack_score || mineSpecificFactors.crackScore;
+
+    // Try to get real weather data
+    let realTemperature = baseValues?.temperature || mineSpecificFactors.temperature;
+    let realRainfall = baseValues?.rainfall || mineSpecificFactors.rainfall;
+
+    if (mineId) {
+      try {
+        // Get mine coordinates from cache or fetch them
+        const { data: mine } = await supabase
+          .from('mines')
+          .select('latitude, longitude')
+          .eq('id', mineId)
+          .single();
+
+        if (mine && mine.latitude && mine.longitude) {
+          // Fetch real weather data
+          const { data: weatherData } = await supabase.functions.invoke('fetch-weather-data', {
+            body: {
+              latitude: mine.latitude,
+              longitude: mine.longitude
+            }
+          });
+
+          if (weatherData && !weatherData.error) {
+            realTemperature = weatherData.temperature;
+            realRainfall = weatherData.rainfall;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to fetch real weather data, using simulated values:', error);
+      }
+    }
 
     return {
       mine_id: mineId || 'default-mine',
       displacement: Math.max(0, baseDisplacement + (Math.random() - 0.5) * 0.8),
       strain: Math.max(0, baseStrain + (Math.random() - 0.5) * 30),
       pore_pressure: Math.max(0, basePorePressure + (Math.random() - 0.5) * 8),
-      rainfall: Math.max(0, baseRainfall + (Math.random() - 0.3) * 15),
-      temperature: baseTemperature + (Math.random() - 0.5) * 4,
-      dem_slope: Math.max(0, baseSlope + (Math.random() - 0.5) * 0.5),
+      rainfall: Math.max(0, realRainfall + (Math.random() - 0.5) * 2), // Real rainfall with minimal variation
+      temperature: realTemperature + (Math.random() - 0.5) * 1, // Real temperature with minimal variation
       crack_score: Math.max(0, Math.min(10, baseCrackScore + (Math.random() - 0.5) * 2)),
       timestamp: now,
     };
@@ -142,8 +168,8 @@ export const useSensorData = (options: UseSensorDataOptions) => {
     }
   }, [mineId]);
 
-  // Generate simulated data
-  const generateSimulatedData = useCallback(() => {
+  // Generate simulated data with real weather
+  const generateSimulatedData = useCallback(async () => {
     setIsLoading(true);
     
     // Generate historical data (last 24 hours)
@@ -152,7 +178,7 @@ export const useSensorData = (options: UseSensorDataOptions) => {
     
     for (let i = 24; i >= 0; i--) {
       const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
-      const reading = generateSensorReading();
+      const reading = await generateSensorReading();
       reading.timestamp = timestamp.toISOString();
       historicalData.push(reading);
     }
@@ -168,9 +194,9 @@ export const useSensorData = (options: UseSensorDataOptions) => {
     if (mode === 'live') {
       await fetchLiveSensorData();
     } else {
-      // Generate new simulated reading
+      // Generate new simulated reading with real weather data
       const lastReading = sensorData[sensorData.length - 1];
-      const newReading = generateSensorReading(lastReading);
+      const newReading = await generateSensorReading(lastReading);
       
       setSensorData(prev => {
         const updated = [...prev.slice(-49), newReading]; // Keep last 50 readings

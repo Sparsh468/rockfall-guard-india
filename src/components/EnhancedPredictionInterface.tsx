@@ -250,7 +250,6 @@ const EnhancedPredictionInterface = () => {
           pore_pressure: latestData.pore_pressure || 0,
           rainfall: latestData.rainfall || 0,
           temperature: latestData.temperature || 0,
-          dem_slope: latestData.dem_slope || 0,
           crack_score: latestData.crack_score || 0,
         }));
         
@@ -523,20 +522,6 @@ const EnhancedPredictionInterface = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="dem_slope" className="flex items-center space-x-2">
-                  <Mountain className="w-4 h-4" />
-                  <span>DEM Slope (°)</span>
-                </Label>
-                <Input
-                  id="dem_slope"
-                  type="number"
-                  step="0.1"
-                  value={predictionParams.dem_slope}
-                  onChange={(e) => handleInputChange('dem_slope', e.target.value)}
-                  className="mt-2"
-                />
-              </div>
 
               <div className="md:col-span-2">
                 <Label htmlFor="crack_score" className="flex items-center space-x-2">
